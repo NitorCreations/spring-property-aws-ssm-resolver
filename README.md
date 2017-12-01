@@ -1,0 +1,1 @@
+# spring-property-aws-ssm-resolver
