@@ -3,7 +3,6 @@ package com.nitorcreations.spring.aws;
 import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement;
 import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagementClientBuilder;
 import com.amazonaws.services.simplesystemsmanagement.model.GetParameterRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -23,8 +22,7 @@ public class SpringPropertySSMParameterResolver implements EnvironmentPostProces
 
     private static final String PREFIX = "{ssmParameter}";
 
-    @Autowired
-    private AwsSsmClient aws;
+    private AwsSsmClient aws = new AwsSsmClient();
 
     /**
      * Processor that iterates through all property sources of the Spring environment to check if there are
@@ -48,4 +46,32 @@ public class SpringPropertySSMParameterResolver implements EnvironmentPostProces
                 }
             });
     }
+
+    class AwsSsmClient {
+
+        private AWSSimpleSystemsManagement awsSsm = null;
+
+        String resolveSsmParameter(String value, String prefix) {
+            String ssmParameterName = value.substring(prefix.length());
+            GetParameterRequest request = new GetParameterRequest().withName(ssmParameterName).withWithDecryption(true);
+
+            return getAWSClient().getParameter(request).getParameter().getValue();
+        }
+
+        /**
+         * Lazily initiated AWS client to prevent errors when the configuration has no ssm configured parameters
+         * and no working AWS environment setup
+         *
+         * @return AWS SSM client
+         */
+        private AWSSimpleSystemsManagement getAWSClient() {
+            if (awsSsm == null) {
+                awsSsm = AWSSimpleSystemsManagementClientBuilder.defaultClient();
+            }
+            return awsSsm;
+        }
+
+    }
+
 }
+
