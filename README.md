@@ -13,6 +13,7 @@
     <dependency>
         <groupId>com.nitorcreations</groupId>
         <artifactId>spring-property-aws-ssm-resolver</artifactId>
+        <version>1.0.0</version>
     </dependency>
 
 ## Usage
