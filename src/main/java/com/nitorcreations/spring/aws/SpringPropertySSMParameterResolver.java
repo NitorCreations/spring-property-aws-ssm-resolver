@@ -1,8 +1,7 @@
 package com.nitorcreations.spring.aws;
 
-import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement;
-import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagementClientBuilder;
-import com.amazonaws.services.simplesystemsmanagement.model.GetParameterRequest;
+import software.amazon.awssdk.services.ssm.SsmClient;
+import software.amazon.awssdk.services.ssm.model.GetParameterRequest;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -22,7 +21,7 @@ public class SpringPropertySSMParameterResolver implements EnvironmentPostProces
 
     private static final String PREFIX = "{ssmParameter}";
 
-    private AwsSsmClient aws = new AwsSsmClient();
+    private final AwsSsmClient aws = new AwsSsmClient();
 
     /**
      * Processor that iterates through all property sources of the Spring environment to check if there are
@@ -49,13 +48,16 @@ public class SpringPropertySSMParameterResolver implements EnvironmentPostProces
 
     class AwsSsmClient {
 
-        private AWSSimpleSystemsManagement awsSsm = null;
+        private SsmClient awsSsm = null;
 
         String resolveSsmParameter(String value, String prefix) {
             String ssmParameterName = value.substring(prefix.length());
-            GetParameterRequest request = new GetParameterRequest().withName(ssmParameterName).withWithDecryption(true);
+            GetParameterRequest request = GetParameterRequest.builder()
+                    .name(ssmParameterName)
+                    .withDecryption(true)
+                    .build();
 
-            return getAWSClient().getParameter(request).getParameter().getValue();
+            return getAWSClient().getParameter(request).parameter().value();
         }
 
         /**
@@ -64,13 +66,12 @@ public class SpringPropertySSMParameterResolver implements EnvironmentPostProces
          *
          * @return AWS SSM client
          */
-        private AWSSimpleSystemsManagement getAWSClient() {
+        private SsmClient getAWSClient() {
             if (awsSsm == null) {
-                awsSsm = AWSSimpleSystemsManagementClientBuilder.defaultClient();
+                awsSsm = SsmClient.create();
             }
             return awsSsm;
         }
-
     }
 
 }
